@@ -549,12 +549,16 @@ const App = {
   // ha a konzolnak helyileg nincs kiválasztott szava (pl. újratöltés után),
   // ebből pótoljuk, hogy a konzol és a GM app mindig ugyanazt lássa.
   onRemoteStartSignal(remoteGame) {
+    console.log('[App] onRemoteStartSignal, helyi szó:', state.currentWord, '| távoli állapot:', remoteGame);
     if (!state.currentWord && remoteGame && remoteGame.word) {
       state.currentWord = remoteGame.word;
       state.currentMode = remoteGame.mode || null;
       state.currentPoints = (remoteGame.points === undefined) ? null : remoteGame.points;
     }
-    if (!state.currentWord) return; // se helyi, se távoli feladvány nincs kiválasztva
+    if (!state.currentWord) {
+      console.warn('[App] onRemoteStartSignal megszakítva: se helyi, se távoli feladvány nincs kiválasztva.');
+      return;
+    }
     App.runCountdownThenStart();
   },
 
@@ -676,15 +680,13 @@ function init() {
   });
   UI.showState('idle');
 
-  // Távoli indítás-figyelő regisztrálása, újrapróbálva amíg a Firebase kapcsolat fel nem épül
-  function tryAttachStartListener(retries) {
-    if (window.ScoreboardSync && ScoreboardSync.isReady()) {
-      ScoreboardSync.listenForStart((remoteGame) => App.onRemoteStartSignal(remoteGame));
-    } else if (retries > 0) {
-      setTimeout(() => tryAttachStartListener(retries - 1), 400);
-    }
+  // Távoli indítás-figyelő regisztrálása. A callback regisztrálása nem
+  // időzítéshez kötött: a ScoreboardSync akkor csatlakoztatja ténylegesen
+  // a Firebase-figyelőt, amikor a kapcsolat elkészül - akár azonnal, akár
+  // lassú hálózat esetén csak jóval később -, nincs feladó timeout.
+  if (window.ScoreboardSync) {
+    ScoreboardSync.listenForStart((remoteGame) => App.onRemoteStartSignal(remoteGame));
   }
-  tryAttachStartListener(15);
 }
 
 document.addEventListener('DOMContentLoaded', init);

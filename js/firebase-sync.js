@@ -55,6 +55,11 @@ const ScoreboardSync = (() => {
       db = firebase.database();
       ready = true;
       console.log("[ScoreboardSync] Kapcsolódva a Firebase-hez.");
+      // Ha a listenForStart() már korábban meghívódott (mielőtt a Firebase
+      // kapcsolat felépült volna), itt csatlakoztatjuk a figyelőt - nincs
+      // időkorlát/timeout, eseményvezérelt: amint kész a kapcsolat, azonnal
+      // felcsatlakozik, bármeddig is tartott (lassú hálózat esetén sem adja fel).
+      attachStartListener();
     } catch (e) {
       console.warn("[ScoreboardSync] Firebase init hiba:", e);
       ready = false;
@@ -124,6 +129,26 @@ const ScoreboardSync = (() => {
     });
   }
 
+  // ===== A TELJES activityGame NODE FOLYAMATOS FIGYELÉSE =====
+  // Mindig friss másolatot tartunk a legutóbb látott állapotról (word/mode/
+  // points/status), hogy a startSignal-ra NE kelljen külön, késleltetett
+  // (és hibázható) lekérdezést indítani, amíg a jel feldolgozása fut - a
+  // "Kör indítása" reakciója emiatt ugyanolyan azonnali, mintha a konzol
+  // saját, helyi indítógombja hívta volna.
+  let lastKnownGame = null;
+  let gameListenerAttached = false;
+
+  function attachGameListener() {
+    if (!ready || !db || gameListenerAttached) return;
+    gameListenerAttached = true;
+    db.ref(PATH).on("value", (snapshot) => {
+      lastKnownGame = snapshot.val() || null;
+      console.log("[ScoreboardSync] activityGame frissült:", lastKnownGame);
+    }, (err) => {
+      console.warn("[ScoreboardSync] activityGame figyelő hiba (jogosultság?):", err);
+    });
+  }
+
   // ===== TÁVOLI INDÍTÁS FIGYELÉSE =====
   // A GM egy másik appból ír a "activityGame/startSignal" mezőbe
   // (pl. egy időbélyeget), amire ez az app reagál: 3-2-1 leszámolás,
@@ -135,6 +160,7 @@ const ScoreboardSync = (() => {
   function attachStartListener() {
     if (!ready || !db || startListenerAttached || !startSignalCallback) return;
     startListenerAttached = true;
+    attachGameListener();
     // Amikor ez a listener csatlakozik, a Firebase AZONNAL visszaadja az akkor
     // aktuális értéket - ezt korábban mindig "csak baseline"-ként kezeltük és
     // sosem indítottunk rá timer-t. Ez azt okozta, hogy ha a GM app épp akkor
@@ -144,20 +170,20 @@ const ScoreboardSync = (() => {
     // baseline-nak (nem indítunk rá), ha a jel a listener csatlakozása ELŐTT
     // íródott - ha utána/közben, azonnal reagálunk rá.
     const attachedAt = Date.now();
+    console.log("[ScoreboardSync] startSignal figyelő csatlakoztatva.");
     db.ref(PATH + "/startSignal").on("value", (snapshot) => {
       const val = snapshot.val();
+      console.log("[ScoreboardSync] startSignal érkezett:", val, "| előző:", lastSeenStartSignal);
       if (val === null || val === undefined) return;
       if (val === lastSeenStartSignal) return;
       const isStale = lastSeenStartSignal === null && typeof val === "number" && val < attachedAt;
       lastSeenStartSignal = val;
-      if (isStale || !startSignalCallback) return;
-      // A jelhez tartozó feladvány-adatot (szó/mód/pont) is lekérjük a Firebase-ből,
-      // hogy akkor is el tudjunk indulni, ha a konzol saját helyi állapotából
-      // (pl. újratöltés vagy más eszköz miatt) hiányzik a kiválasztott szó -
-      // így a konzol és a GM app mindig ugyanazt az igazságot látja.
-      db.ref(PATH).once("value").then((gameSnap) => {
-        startSignalCallback(gameSnap.val() || null);
-      }).catch(() => startSignalCallback(null));
+      if (isStale) { console.log("[ScoreboardSync] -> elavultnak jelölve (a figyelő csatlakozása előtti jel), kihagyva."); return; }
+      if (!startSignalCallback) return;
+      console.log("[ScoreboardSync] -> indítás, ismert játékállapot:", lastKnownGame);
+      startSignalCallback(lastKnownGame);
+    }, (err) => {
+      console.warn("[ScoreboardSync] startSignal figyelő hiba (jogosultság?):", err);
     });
   }
 
