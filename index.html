@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="hu">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <meta name="theme-color" content="#081420"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="Reactivity"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" href="icons/icon-192.png"/>
+  <link rel="apple-touch-icon" href="icons/icon-192.png"/>
+  <title>Reactivity</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css"/>
+  <link rel="stylesheet" href="css/style.css"/>
+</head>
+<body>
+
+<!-- FULLSCREEN INDÍTÓ OVERLAY -->
+<div id="fs-start" onclick="UI.startFullscreen()" style="cursor:pointer;position:fixed;inset:0;z-index:999;background:#081420;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:32px;overflow:hidden;touch-action:none;">
+  <div class="ambient-bg"><span></span><span></span></div>
+  <div style="position:relative;font-family:'Bebas Neue',sans-serif;font-size:72px;letter-spacing:6px;color:#4ee6ff;text-shadow:0 0 40px rgba(78,230,255,0.5);pointer-events:none;">REACTIVITY</div>
+  <div style="position:relative;font-size:16px;font-weight:600;color:#5a8fa8;letter-spacing:6px;text-transform:uppercase;pointer-events:none;">Smart Activity Engine</div>
+  <button onclick="UI.startFullscreen()" style="position:relative;margin-top:16px;padding:28px 48px;background:linear-gradient(135deg,#1ec8ff,#0e6fa8);border:none;border-radius:20px;color:#fff;font-family:'Bebas Neue',sans-serif;font-size:32px;letter-spacing:2px;cursor:pointer;box-shadow:0 8px 32px rgba(30,200,255,0.45);transition:transform .15s var(--ease-spring, cubic-bezier(.34,1.56,.64,1));">
+    <i class="ti ti-arrows-maximize" style="font-size:36px;vertical-align:-4px;margin-right:10px;"></i>
+    Indítás teljes képernyőn
+  </button>
+  <div style="position:relative;font-size:13px;color:#3d5a6b;pointer-events:none;">Koppints bárhová a teljes képernyős módhoz</div>
+</div>
+
+<!-- ===== JÁTÉKOS NÉZET ===== -->
+<div id="player-view" class="view active">
+  <div class="ambient-bg"><span></span><span></span></div>
+  <div class="stars" id="stars"></div>
+
+  <div class="player-inner">
+    <!-- Állapot: VÁRAKOZÁS -->
+    <div id="state-idle" class="state active">
+      <div class="logo-wrap">
+        <div class="logo-icon"><img src="icons/icon-512.png" alt="Reactivity logó" style="width:88px;height:88px;border-radius:18px;"/></div>
+        <h1 class="logo-text">REACTIVITY</h1>
+        <p class="logo-sub">Smart Activity Engine</p>
+      </div>
+      <button class="btn-giant pulse" id="btn-draw" onclick="App.drawCard()">
+        <i class="ti ti-hand-finger"></i>
+        <span>Feladványt húzok!</span>
+      </button>
+      <div class="category-pill" id="active-cat-pill">
+        <i class="ti ti-tag"></i>
+        <span id="active-cat-name">Családi</span>
+      </div>
+    </div>
+
+    <!-- Állapot: FELADVÁNY (általános kategóriák) -->
+    <div id="state-card" class="state">
+      <div class="challenge-card" id="challenge-card">
+        <div class="challenge-mode" id="challenge-mode">
+          <i class="ti" id="mode-icon"></i>
+          <span id="mode-label"></span>
+        </div>
+        <div class="challenge-word" id="challenge-word">—</div>
+        <div class="challenge-desc" id="challenge-desc"></div>
+      </div>
+      <div class="waiting-indicator">
+        <span class="waiting-dot"></span>
+        <span class="waiting-dot"></span>
+        <span class="waiting-dot"></span>
+        <span>Várakozás a játékmesterre…</span>
+      </div>
+      <button class="btn-secondary" onclick="App.reset()">
+        <i class="ti ti-refresh"></i> Vissza
+      </button>
+    </div>
+
+    <!-- Állapot: 3 KÁRTYÁS VÁLASZTÓ (18+ kategória) -->
+    <div id="state-pick3" class="state">
+      <div class="pick3-countdown" id="pick3-countdown">
+        <i class="ti ti-clock"></i>
+        <span>Válassz feladványt! </span>
+        <span id="pick3-countdown-num">15</span><span>s</span>
+      </div>
+      <div class="pick3-grid" id="pick3-grid"></div>
+      <div class="pick3-actions">
+        <div class="waiting-indicator" id="pick3-waiting" style="display:none;">
+          <span class="waiting-dot"></span>
+          <span class="waiting-dot"></span>
+          <span class="waiting-dot"></span>
+          <span>Várakozás a játékmesterre…</span>
+        </div>
+        <button class="btn-secondary" onclick="App.reset()">
+          <i class="ti ti-refresh"></i> Vissza
+        </button>
+      </div>
+    </div>
+
+    <!-- Állapot: 3-2-1 LESZÁMOLÁS -->
+    <div id="state-countdown" class="state">
+      <div class="countdown-circle">
+        <span id="countdown-num">3</span>
+      </div>
+      <div class="countdown-label">Felkészülni!</div>
+    </div>
+
+    <!-- Állapot: IDŐZÍTŐ -->
+    <div id="state-timer" class="state">
+      <div class="timer-wrap">
+        <svg class="timer-svg" viewBox="0 0 220 220">
+          <circle class="timer-bg" cx="110" cy="110" r="96"/>
+          <circle class="timer-arc" id="timer-arc" cx="110" cy="110" r="96"/>
+        </svg>
+        <div class="timer-inner">
+          <div class="timer-num" id="timer-num">60</div>
+          <div class="timer-unit">másodperc</div>
+        </div>
+      </div>
+      <div class="timer-word-recap" id="timer-word-recap"></div>
+      <button class="btn-giant solved" id="btn-solved" onclick="App.solved()">
+        <i class="ti ti-check"></i>
+        <span>Megoldva!</span>
+      </button>
+      <button class="btn-giant red" id="btn-done" onclick="App.reset()" style="display:none;">
+        <i class="ti ti-flag"></i>
+        <span>Kész!</span>
+      </button>
+    </div>
+
+    <!-- Állapot: SIKERES MEGOLDÁS -->
+    <div id="state-solved" class="state">
+      <div class="celebrate-burst" id="celebrate-burst"></div>
+      <div class="solved-icon"><i class="ti ti-confetti"></i></div>
+      <div class="solved-text">Megoldva!</div>
+      <div class="solved-word-recap" id="solved-word-recap"></div>
+      <button class="btn-giant" onclick="App.reset()">
+        <i class="ti ti-refresh"></i>
+        <span>Új feladvány</span>
+      </button>
+    </div>
+
+    <!-- Állapot: LEJÁRT -->
+    <div id="state-timeout" class="state">
+      <div class="timeout-icon"><i class="ti ti-hourglass-empty"></i></div>
+      <div class="timeout-text">Lejárt az idő!</div>
+      <button class="btn-giant" onclick="App.reset()">
+        <i class="ti ti-refresh"></i>
+        <span>Új feladvány</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- GM belépési pont (rejtett sarok) -->
+  <button class="gm-corner" id="gm-corner-btn" onclick="UI.openGMPanel()" title="Játékmester">
+    <i class="ti ti-settings"></i>
+  </button>
+  <button class="fs-btn" onclick="UI.toggleFullscreen()" title="Teljes képernyő">
+    <i class="ti ti-arrows-maximize" id="fs-icon"></i>
+  </button>
+</div>
+
+<!-- ===== GM PANEL ===== -->
+<div id="gm-panel" class="view overlay">
+  <div class="gm-wrap">
+    <div class="gm-header">
+      <h2><i class="ti ti-settings"></i> Játékmester</h2>
+      <button class="gm-close" onclick="UI.hideAll()"><i class="ti ti-x"></i></button>
+    </div>
+
+    <div class="gm-section">
+      <label class="section-label">Kör indítása (helyi vezérlés)</label>
+      <p class="section-hint" style="margin-bottom:8px;">Normál esetben a másik appból (Firebase) indul a kör. Ha az nem elérhető, itt manuálisan is elindíthatod - csak ha a játékos már kiválasztott egy feladványt.</p>
+      <button class="btn-modal" onclick="UI.manualStartTimer()">
+        <i class="ti ti-player-play"></i> Kör indítása most
+      </button>
+    </div>
+
+    <div class="gm-section">
+      <label class="section-label">Aktív kategória</label>
+      <div class="category-grid" id="category-grid"></div>
+    </div>
+
+    <div class="gm-section">
+      <label class="section-label">Időzítő (másodperc)</label>
+      <div class="timer-row">
+        <input type="range" id="timer-range" min="30" max="180" step="10" value="60" oninput="UI.updateTimerLabel()"/>
+        <span class="timer-val" id="timer-val">60</span>
+      </div>
+    </div>
+
+    <div class="gm-section">
+      <label class="section-label">Kártyaválasztási idő (18+ kategória, mp)</label>
+      <div class="timer-row">
+        <input type="range" id="pick3-range" min="5" max="60" step="5" value="15" oninput="UI.updatePick3Label()"/>
+        <span class="timer-val" id="pick3-val">15</span>
+      </div>
+      <p class="section-hint">Ha ennyi idő alatt nem választ a játékos a 3 kártya közül, a rendszer véletlenszerűen kijelöl egyet.</p>
+    </div>
+
+    <div class="gm-section">
+      <label class="section-label">Anthropic API kulcs</label>
+      <input type="password" id="api-key-input" placeholder="sk-ant-..."/>
+      <p class="section-hint">Az AI feladványgeneráláshoz szükséges. Nélküle előre beépített szókészlet működik.</p>
+    </div>
+
+    <div class="gm-section">
+      <label class="section-label">Hangeffektek</label>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:14px;">Hangok bekapcsolva</span>
+        <input type="checkbox" id="sound-toggle" onchange="UI.toggleSound()" style="width:20px;height:20px;accent-color:#1ec8ff;"/>
+      </div>
+      <div class="timer-row">
+        <span style="font-size:13px;color:#8888aa;min-width:60px;">Hangerő</span>
+        <input type="range" id="volume-range" min="0" max="100" step="5" value="70" oninput="UI.updateVolumeLabel()"/>
+        <span class="timer-val" id="volume-val" style="font-size:18px;min-width:44px;">70%</span>
+      </div>
+    </div>
+
+    <div class="gm-section">
+      <label class="section-label">Hangkönyvtár (kategóriánkénti zenék)</label>
+      <p class="section-hint" style="margin-bottom:8px;">Válassz kategóriát és helyzetet, majd tölts fel hozzá MP3 fájl(oka)t. A lejátszás automatikus, véletlenszerű, és nem ismétel, amíg minden fel nem hangzott.</p>
+
+      <div class="timer-row" style="margin-bottom:8px;">
+        <select id="audio-cat-select" class="audio-select" onchange="UI.refreshAudioLibraryList()"></select>
+      </div>
+      <div class="timer-row" style="margin-bottom:10px;">
+        <select id="audio-slot-select" class="audio-select" onchange="UI.refreshAudioLibraryList()">
+          <option value="idle">🌙 Üresjárat (nincs feladat kihúzva)</option>
+          <option value="solved">✓ Sikeres megoldás</option>
+          <option value="timeout">⏰ Lejárt idő</option>
+          <option value="Mutasd meg!">🙋 Mutasd meg!</option>
+          <option value="Rajzold le!">✏️ Rajzold le!</option>
+          <option value="Magyarázd el!">💬 Magyarázd el!</option>
+          <option value="Írd körül!">📝 Írd körül!</option>
+          <option value="Szájról olvasás!">👄 Szájról olvasás!</option>
+        </select>
+      </div>
+
+      <label class="btn-modal" for="audio-file-input" style="cursor:pointer;display:flex;">
+        <i class="ti ti-upload"></i> MP3 feltöltése
+      </label>
+      <input type="file" id="audio-file-input" accept="audio/*" multiple style="display:none;" onchange="UI.uploadAudioFiles()"/>
+
+      <div id="audio-track-list" style="margin-top:10px;display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
+    <div class="gm-section">
+      <label class="section-label">Session állapot</label>
+      <div id="session-counter" style="font-size:13px;color:#8888aa;margin-bottom:8px;">—</div>
+      <button class="btn-modal" style="background:rgba(232,64,64,0.15);color:#e84040;border:1px solid rgba(232,64,64,0.3);" onclick="UI.resetSession()">
+        <i class="ti ti-refresh"></i> Session reset (szólista törlése)
+      </button>
+    </div>
+
+    <div class="gm-actions">
+      <button class="btn-modal" onclick="UI.saveGMSettings()">
+        <i class="ti ti-device-floppy"></i> Beállítások mentése
+      </button>
+    </div>
+
+    <div class="gm-status" id="gm-status"></div>
+  </div>
+</div>
+
+<!-- Betöltő overlay -->
+<div id="loading-overlay" class="loading-overlay" style="display:none;">
+  <div class="loading-spinner"></div>
+  <div class="loading-text">Feladványt generálok…</div>
+</div>
+
+<!-- Firebase SDK (csak akkor aktív, ha a firebase-sync.js-ben be van állítva a config) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<script src="js/sounds.js?v=14"></script>
+<script src="js/data.js?v=14"></script>
+<script src="js/data-18plus.js?v=14"></script>
+<script src="js/audio-library.js?v=14"></script>
+<script src="js/firebase-sync.js?v=14"></script>
+<script src="js/app.js?v=14"></script>
+<div style="position:fixed;bottom:6px;right:9px;z-index:900;font-size:10px;color:rgba(255,255,255,.28);pointer-events:none;font-family:'Nunito',sans-serif">v1.2</div>
+</body>
+</html>

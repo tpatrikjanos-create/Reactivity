@@ -1,0 +1,846 @@
+/* ===== RESET & BASE ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #081420;
+  --bg2: #0c1f2e;
+  --accent: #1ec8ff;
+  --accent2: #0e6fa8;
+  --green: #27c47a;
+  --red: #e84040;
+  --text: #eafbff;
+  --text-muted: #5a8fa8;
+  --card-bg: rgba(30,200,255,0.07);
+  --card-border: rgba(30,200,255,0.18);
+  --radius: 20px;
+  --radius-sm: 12px;
+  --ease-spring: cubic-bezier(.34,1.56,.64,1);
+  --ease-out: cubic-bezier(.16,1,.3,1);
+}
+
+/* ===== AMBIENT GLOW LAYER ===== */
+.ambient-bg { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.ambient-bg span { position: absolute; border-radius: 50%; opacity: .26; will-change: transform; }
+.ambient-bg span:nth-child(1){ width:42vmax; height:42vmax; left:-14vmax; top:-16vmax; background:radial-gradient(circle,#6C4CD6,transparent 68%); animation: drift1 26s ease-in-out infinite; }
+.ambient-bg span:nth-child(2){ width:36vmax; height:36vmax; right:-12vmax; bottom:-14vmax; background:radial-gradient(circle,var(--accent),transparent 68%); opacity:.16; animation: drift2 32s ease-in-out infinite; }
+@keyframes drift1 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(6vmax,8vmax) scale(1.12); } }
+@keyframes drift2 { 0%,100% { transform: translate(0,0) scale(1); } 50% { transform: translate(-7vmax,5vmax) scale(1.08); } }
+@media (prefers-reduced-motion: reduce) { .ambient-bg span { animation: none !important; } }
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+/* ===== VIEWS ===== */
+.view {
+  position: fixed;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.view.active { display: flex; }
+.view.overlay {
+  background: rgba(0,0,0,0.8);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+}
+
+/* ===== STARS BG ===== */
+.stars {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 0;
+}
+.star {
+  position: absolute;
+  border-radius: 50%;
+  background: #fff;
+  animation: twinkle var(--dur, 3s) ease-in-out infinite;
+  opacity: 0;
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0; }
+  50% { opacity: var(--op, 0.6); }
+}
+
+/* ===== PLAYER VIEW ===== */
+#player-view { background: var(--bg); }
+
+.player-inner {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 700px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 32px;
+  gap: 32px;
+}
+
+/* ===== STATES ===== */
+.state {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  gap: 24px;
+  animation: cardIn .55s var(--ease-spring) both;
+  position: relative;
+  perspective: 1000px;
+}
+.state.active { display: flex; }
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(28px) scale(.92) rotateX(8deg); }
+  to   { opacity: 1; transform: translateY(0) scale(1) rotateX(0); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .state { animation: fadeUp .3s ease both; }
+  @keyframes fadeUp { from{opacity:0} to{opacity:1} }
+}
+
+/* ===== LOGO ===== */
+.logo-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+.logo-icon {
+  font-size: 56px;
+  color: var(--accent);
+  line-height: 1;
+  filter: drop-shadow(0 0 20px rgba(30,200,255,0.5));
+}
+.logo-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 80px;
+  letter-spacing: 6px;
+  color: var(--text);
+  line-height: 0.9;
+  text-shadow: 0 0 40px rgba(30,200,255,0.3);
+}
+.logo-sub {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 8px;
+  text-transform: uppercase;
+}
+
+/* ===== GIANT BUTTON ===== */
+.btn-giant {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  max-width: 440px;
+  padding: 32px 24px;
+  border-radius: var(--radius);
+  border: none;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 36px;
+  letter-spacing: 2px;
+  cursor: pointer;
+  box-shadow: 0 8px 32px rgba(30,200,255,0.35);
+  transition: transform 0.12s var(--ease-spring), box-shadow 0.12s;
+}
+.btn-giant i { font-size: 48px; }
+.btn-giant:active { transform: scale(0.96); box-shadow: 0 4px 16px rgba(30,200,255,0.2); }
+
+.btn-giant.green {
+  background: linear-gradient(135deg, #27c47a, #1a9a5e);
+  box-shadow: 0 8px 32px rgba(39,196,122,0.35);
+  color: #fff;
+}
+.btn-giant.red {
+  background: linear-gradient(135deg, #e84040, #b02020);
+  box-shadow: 0 8px 32px rgba(232,64,64,0.35);
+  color: #fff;
+}
+.btn-giant.solved {
+  background: linear-gradient(135deg, #27c47a, #1a9a5e);
+  box-shadow: 0 8px 32px rgba(39,196,122,0.4);
+  font-size: 30px;
+  padding: 24px 24px;
+  color: #fff;
+}
+.btn-giant.solved i { font-size: 38px; }
+
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 8px 32px rgba(30,200,255,0.35); }
+  50%       { box-shadow: 0 12px 48px rgba(30,200,255,0.65), 0 0 0 12px rgba(30,200,255,0.1); }
+}
+.btn-giant.pulse { animation: pulse-glow 2.5s ease-in-out infinite; }
+
+.btn-secondary {
+  background: transparent;
+  border: 1px solid var(--card-border);
+  color: var(--text-muted);
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  padding: 10px 24px;
+  border-radius: 40px;
+  cursor: pointer;
+  transition: color 0.2s, border-color 0.2s;
+}
+.btn-secondary:hover { color: var(--text); border-color: rgba(255,255,255,0.3); }
+
+/* ===== CATEGORY PILL ===== */
+.category-pill {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(30,200,255,0.12);
+  border: 1px solid rgba(30,200,255,0.3);
+  color: var(--accent);
+  padding: 8px 20px;
+  border-radius: 40px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* ===== CHALLENGE CARD ===== */
+.challenge-card {
+  width: 100%;
+  max-width: 500px;
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 36px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  backdrop-filter: blur(12px);
+}
+
+.challenge-mode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.challenge-mode i { font-size: 20px; }
+
+.challenge-word {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 72px;
+  line-height: 1;
+  text-align: center;
+  color: var(--text);
+  letter-spacing: 2px;
+  word-break: break-word;
+}
+
+.challenge-desc {
+  font-size: 15px;
+  color: var(--text-muted);
+  text-align: center;
+  line-height: 1.6;
+  min-height: 20px;
+}
+
+/* ===== TIMER ===== */
+.timer-wrap {
+  position: relative;
+  width: 240px;
+  height: 240px;
+}
+.timer-svg {
+  width: 240px;
+  height: 240px;
+  transform: rotate(-90deg);
+}
+.timer-bg { fill: none; stroke: rgba(255,255,255,0.08); stroke-width: 10; }
+.timer-arc {
+  fill: none;
+  stroke: var(--green);
+  stroke-width: 10;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.9s linear, stroke 1s ease;
+}
+.timer-inner {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.timer-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 80px;
+  line-height: 1;
+  color: var(--text);
+}
+.timer-unit {
+  font-size: 14px;
+  color: var(--text-muted);
+  letter-spacing: 1px;
+}
+
+.timer-word-recap {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 2px;
+  color: var(--accent);
+  text-align: center;
+  opacity: 0.8;
+}
+
+/* ===== SOLVED STATE ===== */
+.solved-icon {
+  font-size: 96px;
+  color: var(--green);
+  animation: solved-pop 0.5s ease;
+}
+@keyframes solved-pop {
+  0% { transform: scale(0); opacity: 0; }
+  60% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.solved-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 64px;
+  letter-spacing: 3px;
+  color: var(--green);
+  text-shadow: 0 0 30px rgba(39,196,122,0.5);
+}
+.solved-word-recap {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 2px;
+  color: var(--text-muted);
+}
+
+/* Konfetti burst */
+.celebrate-burst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+.confetti-piece {
+  position: absolute;
+  top: -10%;
+  width: 10px;
+  height: 16px;
+  opacity: 0.95;
+  animation: confetti-fall linear forwards;
+  border-radius: 2px;
+}
+@keyframes confetti-fall {
+  0%   { transform: translateY(0) translateX(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(120vh) translateX(var(--drift, 0px)) rotate(var(--spin, 360deg)); opacity: 0.3; }
+}
+
+/* ===== TIMEOUT ===== */
+.timeout-icon {
+  font-size: 96px;
+  color: var(--red);
+  animation: shake 0.5s ease;
+}
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%,60% { transform: translateX(-8px); }
+  40%,80% { transform: translateX(8px); }
+}
+.timeout-text {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 52px;
+  letter-spacing: 3px;
+  color: var(--red);
+}
+
+/* ===== GM CORNER ===== */
+.gm-corner {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  width: 44px;
+  height: 44px;
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 50%;
+  color: rgba(255,255,255,0.2);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: color 0.2s, background 0.2s;
+}
+.gm-corner:hover { color: var(--text-muted); background: rgba(255,255,255,0.1); }
+
+/* ===== FULLSCREEN GOMB ===== */
+.fs-btn {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  width: 44px;
+  height: 44px;
+  background: rgba(30,200,255,0.15);
+  border: 1px solid rgba(30,200,255,0.4);
+  border-radius: 50%;
+  color: rgba(30,200,255,0.8);
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: background 0.2s;
+}
+.fs-btn:hover { background: rgba(30,200,255,0.3); }
+
+/* ===== MODAL ===== */
+.modal {
+  background: #0c1f2e;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius);
+  padding: 36px 32px;
+  width: 90%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.modal h2 {
+  font-size: 22px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.modal h2 i { color: var(--accent); }
+
+input[type="password"], input[type="text"], input[type="number"] {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-size: 16px;
+  padding: 12px 16px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+input:focus { border-color: var(--accent); }
+
+.modal-error { color: var(--red); font-size: 14px; min-height: 18px; }
+
+.modal-actions { display: flex; gap: 10px; }
+
+.btn-modal {
+  flex: 1;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  border: none;
+  background: var(--accent);
+  color: #000;
+  font-family: 'Nunito', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: opacity 0.15s;
+}
+.btn-modal:hover { opacity: 0.88; }
+.btn-modal.secondary {
+  background: rgba(255,255,255,0.08);
+  color: var(--text);
+}
+
+/* ===== GM PANEL ===== */
+.gm-wrap {
+  background: #0a1820;
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: var(--radius);
+  width: 92%;
+  max-width: 560px;
+  max-height: 90vh;
+  overflow-y: auto;
+  touch-action: pan-y;
+  padding: 28px 28px 36px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.gm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.gm-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gm-header h2 i { color: var(--accent); }
+.gm-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.gm-section { display: flex; flex-direction: column; gap: 10px; }
+
+.section-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.section-hint { font-size: 12px; color: var(--text-muted); line-height: 1.5; }
+
+.category-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.cat-btn {
+  padding: 14px 12px;
+  border-radius: var(--radius-sm);
+  border: 2px solid transparent;
+  background: rgba(255,255,255,0.05);
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background 0.15s, border-color 0.15s;
+}
+.cat-btn i { font-size: 18px; }
+.cat-btn:hover { background: rgba(255,255,255,0.1); }
+.cat-btn.selected {
+  border-color: var(--accent);
+  background: rgba(30,200,255,0.12);
+  color: var(--accent);
+}
+
+.timer-row { display: flex; align-items: center; gap: 14px; }
+.timer-row input[type="range"] {
+  flex: 1;
+  padding: 0;
+  border: none;
+  background: none;
+  accent-color: var(--accent);
+  height: 4px;
+}
+.timer-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  color: var(--accent);
+  min-width: 48px;
+  text-align: right;
+}
+
+.gm-actions { padding-top: 8px; }
+
+.gm-status {
+  font-size: 14px;
+  color: var(--green);
+  min-height: 20px;
+  text-align: center;
+}
+
+/* ===== LOADING ===== */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(6px);
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+}
+.loading-spinner {
+  width: 56px;
+  height: 56px;
+  border: 4px solid rgba(255,255,255,0.1);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+.loading-text { font-size: 18px; color: var(--text-muted); }
+
+/* ===== 18+ HÁROM KÁRTYÁS VÁLASZTÓ (1/2/3 pontos) ===== */
+.pick3-grid {
+  display: flex;
+  gap: 16px;
+  width: 100%;
+  max-width: 760px;
+  padding: 0 12px;
+}
+
+.pick3-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: var(--card-bg);
+  border: 2px solid var(--card-border);
+  border-radius: var(--radius);
+  padding: 24px 16px 22px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  text-align: center;
+  min-height: 220px;
+}
+.pick3-card:active { transform: scale(0.97); }
+.pick3-card.selected {
+  border-color: var(--accent);
+  background: rgba(30,200,255,0.12);
+  box-shadow: 0 0 0 3px rgba(30,200,255,0.25);
+}
+
+.pick3-points {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 56px;
+  line-height: 1;
+  color: var(--text-muted);
+  transition: color 0.15s;
+}
+.pick3-card.selected .pick3-points { color: var(--accent); }
+
+.pick3-stars {
+  font-size: 14px;
+  color: var(--text-muted);
+  letter-spacing: 2px;
+  margin-top: -6px;
+}
+.pick3-card.selected .pick3-stars { color: var(--accent); }
+
+.pick3-divider {
+  width: 70%;
+  height: 1px;
+  background: var(--card-border);
+}
+
+.pick3-word {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 30px;
+  letter-spacing: 1px;
+  color: var(--text);
+  line-height: 1.15;
+  word-break: break-word;
+}
+
+.pick3-mode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.pick3-mode i { font-size: 15px; }
+.pick3-card.selected .pick3-mode { color: var(--accent); }
+
+.pick3-check {
+  font-size: 24px;
+  color: var(--accent);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.pick3-card.selected .pick3-check { opacity: 1; }
+
+.pick3-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  width: 100%;
+  max-width: 760px;
+  margin-top: 8px;
+}
+.pick3-actions .btn-giant {
+  flex: 1;
+  max-width: 360px;
+}
+.pick3-actions .btn-giant[disabled] {
+  opacity: 0.35;
+  cursor: not-allowed;
+  animation: none !important;
+  box-shadow: none !important;
+}
+
+/* ===== PICK3 COUNTDOWN (kártyaválasztási idő) ===== */
+.pick3-countdown {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--accent);
+  background: rgba(30,200,255,0.1);
+  border: 1px solid rgba(30,200,255,0.25);
+  padding: 8px 18px;
+  border-radius: 40px;
+  margin-bottom: -4px;
+}
+.pick3-countdown i { font-size: 17px; }
+.pick3-countdown #pick3-countdown-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 19px;
+  min-width: 22px;
+  text-align: center;
+}
+.pick3-countdown.urgent {
+  color: var(--red);
+  background: rgba(232,64,64,0.12);
+  border-color: rgba(232,64,64,0.3);
+}
+
+/* ===== HANGKÖNYVTÁR (GM PANEL) ===== */
+.audio-select {
+  width: 100%;
+  background: rgba(30,200,255,0.06);
+  border: 1px solid rgba(30,200,255,0.18);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Nunito', sans-serif;
+  font-size: 14px;
+  padding: 10px 12px;
+  outline: none;
+}
+.audio-select:focus { border-color: var(--accent); }
+
+.audio-track-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.04);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 13px;
+}
+.audio-track-item i.ti-music { color: var(--accent); font-size: 16px; flex-shrink: 0; }
+.audio-track-item .track-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.audio-track-item .track-del {
+  background: none;
+  border: none;
+  color: var(--red);
+  cursor: pointer;
+  font-size: 16px;
+  flex-shrink: 0;
+}
+.audio-track-empty {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: center;
+  padding: 10px 0;
+}
+
+/* ===== VÁRAKOZÁS A JÁTÉKMESTERRE ===== */
+.waiting-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-muted);
+  padding: 18px 28px;
+}
+.waiting-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: waiting-pulse 1.2s ease-in-out infinite;
+}
+.waiting-dot:nth-child(2) { animation-delay: 0.2s; }
+.waiting-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes waiting-pulse {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* ===== 3-2-1 LESZÁMOLÁS ===== */
+.countdown-circle {
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  border: 6px solid var(--accent);
+  box-shadow: 0 0 60px rgba(30,200,255,0.5), inset 0 0 40px rgba(30,200,255,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+#countdown-num {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 140px;
+  color: var(--text);
+  line-height: 1;
+  animation: countdown-pop 0.6s ease;
+}
+@keyframes countdown-pop {
+  0% { transform: scale(0.4); opacity: 0; }
+  60% { transform: scale(1.15); opacity: 1; }
+  100% { transform: scale(1); }
+}
+.countdown-label {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 3px;
+  color: var(--accent);
+  text-transform: uppercase;
+}
+
+.pick3-grid.locked .pick3-card { pointer-events: none; }
+.pick3-grid.locked .pick3-card:not(.selected) { opacity: 0.4; }
