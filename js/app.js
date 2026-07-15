@@ -599,7 +599,7 @@ const App = {
       console.log('[App] Távoli "Megoldva" jelzés érkezett, helyi időzítő leállítása.');
       if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
       if (window.AudioLibrary) AudioLibrary.stopAmbient();
-      SoundEngine.play('cheer');
+      // Az ünneplő hang a kivetítőn szól, nem itt.
       if (window.AudioLibrary) AudioLibrary.playEvent(state.activeCategoryId, 'solved');
       document.getElementById('solved-word-recap').textContent = game.word || state.currentWord || '';
       UI.showState('solved');
@@ -675,8 +675,7 @@ const App = {
     if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
     if (window.AudioLibrary) AudioLibrary.stopAmbient();
 
-    // Ünneplő hang + konfetti
-    SoundEngine.play('cheer');
+    // Az ünneplő hang a kivetítőn szól, nem itt. Konfetti marad itt (helyi vizuál).
     if (window.AudioLibrary) AudioLibrary.playEvent(state.activeCategoryId, 'solved');
 
     // Scoreboard szinkron: megoldva -> zöld
