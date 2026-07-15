@@ -137,6 +137,7 @@ const ScoreboardSync = (() => {
   // saját, helyi indítógombja hívta volna.
   let lastKnownGame = null;
   let gameListenerAttached = false;
+  let statusChangeCallback = null;
 
   function attachGameListener() {
     if (!ready || !db || gameListenerAttached) return;
@@ -144,9 +145,18 @@ const ScoreboardSync = (() => {
     db.ref(PATH).on("value", (snapshot) => {
       lastKnownGame = snapshot.val() || null;
       console.log("[ScoreboardSync] activityGame frissült:", lastKnownGame);
+      if (statusChangeCallback) statusChangeCallback(lastKnownGame);
     }, (err) => {
       console.warn("[ScoreboardSync] activityGame figyelő hiba (jogosultság?):", err);
     });
+  }
+
+  // Minden activityGame-változásra hívódik (nem csak a startSignal-ra) - így
+  // a GM App "Megoldva" / "Lejárt" akciója is eljut a konzolhoz, akkor is,
+  // ha a konzol saját időzítője még fut.
+  function onGameChange(callback) {
+    statusChangeCallback = callback;
+    attachGameListener();
   }
 
   // ===== TÁVOLI INDÍTÁS FIGYELÉSE =====
@@ -202,7 +212,7 @@ const ScoreboardSync = (() => {
 
   return {
     init, idle, timerStart, timerTick, solved, timeout, readySelected,
-    listenForStart, signalStart, isReady: () => ready
+    listenForStart, signalStart, onGameChange, isReady: () => ready
   };
 })();
 

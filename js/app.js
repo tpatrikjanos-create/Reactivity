@@ -562,6 +562,40 @@ const App = {
     App.runCountdownThenStart();
   },
 
+  // A GM App (vagy bármely másik app) közvetlenül a "Megoldva"/"Lejárt"
+  // állapotot is beállíthatja a Firebase-ben (pl. a GM App saját "Megoldva"
+  // gombjával) - ezt a konzolnak is le kell követnie, ha épp fut nála az
+  // időzítő, különben a képernyője rossz állapotban ragad.
+  onRemoteGameStatus(game) {
+    if (!game || !game.status) return;
+    const status = game.status;
+    if (status === App._lastSeenRemoteStatus) return;
+    App._lastSeenRemoteStatus = status;
+
+    const timerActive = document.getElementById('state-timer')?.classList.contains('active');
+    if (!timerActive) return; // csak akkor követjük, ha épp fut nálunk a kör
+
+    if (status === 'solved') {
+      console.log('[App] Távoli "Megoldva" jelzés érkezett, helyi időzítő leállítása.');
+      if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+      if (window.AudioLibrary) AudioLibrary.stopAmbient();
+      SoundEngine.play('cheer');
+      if (window.AudioLibrary) AudioLibrary.playEvent(state.activeCategoryId, 'solved');
+      document.getElementById('solved-word-recap').textContent = game.word || state.currentWord || '';
+      UI.showState('solved');
+      UI.launchConfetti();
+    } else if (status === 'timeout') {
+      console.log('[App] Távoli "Lejárt" jelzés érkezett, helyi időzítő leállítása.');
+      if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+      if (window.AudioLibrary) AudioLibrary.stopAmbient();
+      SoundEngine.play('buzzer');
+      if (window.AudioLibrary) AudioLibrary.playEvent(state.activeCategoryId, 'timeout');
+      document.getElementById('btn-solved').style.display = 'none';
+      document.getElementById('btn-done').style.display = '';
+      UI.showState('timeout');
+    }
+  },
+
   startTimer() {
     SoundEngine.play('timer-start');
     const secs = state.timerSecs;
@@ -686,6 +720,7 @@ function init() {
   // lassú hálózat esetén csak jóval később -, nincs feladó timeout.
   if (window.ScoreboardSync) {
     ScoreboardSync.listenForStart((remoteGame) => App.onRemoteStartSignal(remoteGame));
+    ScoreboardSync.onGameChange((game) => App.onRemoteGameStatus(game));
   }
 }
 
