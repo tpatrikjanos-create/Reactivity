@@ -12,7 +12,6 @@
    - timeout           : lejárt az idő
    - 'Mutasd meg!'      : ezzel a móddal induló kör alatt
    - 'Rajzold le!'
-   - 'Magyarázd el!'
    - 'Írd körül!'
    - 'Szájról olvasás!'
 

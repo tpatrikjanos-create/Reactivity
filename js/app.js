@@ -61,18 +61,17 @@ const CAT_PROMPTS = {
 const MODES_META = {
   'Mutasd meg!':        { icon: 'ti-user',          hint: 'Csak mutogatással, szó nélkül!' },
   'Rajzold le!':        { icon: 'ti-pencil',         hint: 'Csak rajzzal, szó és jel nélkül!' },
-  'Magyarázd el!':      { icon: 'ti-message-circle', hint: 'Szóban magyarázd körül!' },
   'Írd körül!':         { icon: 'ti-writing',        hint: 'Egy mondatban körülírd!' },
   'Szájról olvasás!':   { icon: 'ti-mouth',          hint: 'Hangtalanul mozgasd a szájad – semmi hang!' }
 };
 
 // A belső adatkulcsok (fenti MODES_META, adatfájlok) NEM változtak, csak a
 // képernyőn megjelenő elnevezés - így nem kellett a több száz szó-bejegyzést
-// átírni. 2026-07-15: átnevezve a felhasználó kérésére.
+// átírni. 2026-07-15: átnevezve a felhasználó kérésére. "Magyarázd el!" mód
+// törölve 2026-07-15-én, mert a felhasználó szerint ilyen kategória nem létezik.
 const MODE_DISPLAY_NAMES = {
   'Mutasd meg!':       'Mutogatás',
   'Rajzold le!':       'Rajzolás',
-  'Magyarázd el!':     'Magyarázás',
   'Írd körül!':        'Körülírás',
   'Szájról olvasás!':  'Szájról olvasás'
 };
@@ -155,8 +154,8 @@ async function drawPick3Tier(categoryId, tierPoints, excludeWords) {
   if (state.apiKey && categoryId === 'tizennyolcPlus') {
     try {
       const modes = (tierPoints === 2)
-        ? ['Mutasd meg!', 'Rajzold le!', 'Magyarázd el!', 'Szájról olvasás!']
-        : ['Mutasd meg!', 'Rajzold le!', 'Magyarázd el!'];
+        ? ['Mutasd meg!', 'Rajzold le!', 'Szájról olvasás!']
+        : ['Mutasd meg!', 'Rajzold le!'];
       const modeName = modes[Math.floor(Math.random() * modes.length)];
       const used = Session.getUsed(categoryId).concat(excludeWords);
       const prompt = CAT_PROMPTS.tizennyolcPlus(modeName, used);
