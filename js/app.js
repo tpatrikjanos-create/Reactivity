@@ -6,10 +6,12 @@ const Store = {
 
 /* ===== STATE ===== */
 const state = {
-  activeCategoryId: Store.get('activeCategoryId', 'csaladi'),
+  // "csaladi" -> "altalanos" átnevezés (2026-07-15) - régi mentett érték migrálása
+  activeCategoryId: (Store.get('activeCategoryId', 'altalanos') === 'csaladi') ? 'altalanos' : Store.get('activeCategoryId', 'altalanos'),
   timerSecs: Store.get('timerSecs', 60),
   pick3SelectSecs: Store.get('pick3SelectSecs', 15),
   apiKey: Store.get('apiKey', ''),
+  hideWords: Store.get('hideWords', false),
   currentWord: null,
   currentMode: null,
   currentPoints: null,
@@ -111,13 +113,19 @@ function generateFallback(category) {
   return { word: pick.word, modeName: pick.modeName, modeObj: MODES_META[pick.modeName] || MODES[0] };
 }
 
-/* ===== 18+ CURATED ADATBÁZIS - 3 KÁRTYÁS HÚZÁS (1/2/3 PONT) ===== */
-// A WORDS_18PLUS tömb a data-18plus.js fájlból jön.
-// Minden húzásnál pontosan 1 db 1-pontos, 1 db 2-pontos, 1 db 3-pontos kártyát adunk.
+/* ===== 3 KÁRTYÁS HÚZÁS (1/2/3 PONT) - "pick3" kategóriákhoz ===== */
+// A WORDS_18PLUS / WORDS_ALTALANOS tömbök a data-18plus.js / data-altalanos.js
+// fájlokból jönnek. Minden húzásnál pontosan 1 db 1-pontos, 1 db 2-pontos,
+// 1 db 3-pontos kártyát adunk, amiből a játékos választ.
+const PICK3_SOURCES = {
+  tizennyolcPlus: () => WORDS_18PLUS,
+  altalanos: () => WORDS_ALTALANOS
+};
 
-function pick18PlusWordForTier(tierPoints, excludeWords) {
-  const used = Session.getUsed('tizennyolcPlus');
-  const pool = WORDS_18PLUS.filter(e =>
+function pickWordForTier(categoryId, tierPoints, excludeWords) {
+  const used = Session.getUsed(categoryId);
+  const source = (PICK3_SOURCES[categoryId] && PICK3_SOURCES[categoryId]()) || [];
+  const pool = source.filter(e =>
     e.points === tierPoints &&
     !used.includes(e.word) &&
     !excludeWords.includes(e.word)
@@ -126,20 +134,20 @@ function pick18PlusWordForTier(tierPoints, excludeWords) {
   return pool[Math.floor(Math.random() * pool.length)];
 }
 
-async function draw18PlusTier(tierPoints, excludeWords) {
-  let pick = pick18PlusWordForTier(tierPoints, excludeWords);
+async function drawPick3Tier(categoryId, tierPoints, excludeWords) {
+  let pick = pickWordForTier(categoryId, tierPoints, excludeWords);
   if (pick) {
     return { word: pick.word, modeName: pick.mode, modeObj: MODES_META[pick.mode] || MODES[0], points: pick.points };
   }
 
-  // Kifogyott ez a pontszint a sessionben -> AI próbálkozás, ha van kulcs
-  if (state.apiKey) {
+  // Kifogyott ez a pontszint a sessionben -> AI próbálkozás, ha van kulcs (csak 18+-nál van rá promptunk)
+  if (state.apiKey && categoryId === 'tizennyolcPlus') {
     try {
       const modes = (tierPoints === 2)
         ? ['Mutasd meg!', 'Rajzold le!', 'Magyarázd el!', 'Szájról olvasás!']
         : ['Mutasd meg!', 'Rajzold le!', 'Magyarázd el!'];
       const modeName = modes[Math.floor(Math.random() * modes.length)];
-      const used = Session.getUsed('tizennyolcPlus').concat(excludeWords);
+      const used = Session.getUsed(categoryId).concat(excludeWords);
       const prompt = CAT_PROMPTS.tizennyolcPlus(modeName, used);
 
       const resp = await fetch("https://api.anthropic.com/v1/messages", {
@@ -164,10 +172,10 @@ async function draw18PlusTier(tierPoints, excludeWords) {
     } catch(e) {}
   }
 
-  // Nincs API kulcs, vagy az AI sikertelen -> recikláljuk a 18+ session-listát
-  state.usedWords['tizennyolcPlus'] = [];
+  // Nincs API kulcs, vagy az AI sikertelen (vagy nincs AI erre a kategóriára) -> recikláljuk a session-listát
+  state.usedWords[categoryId] = [];
   Store.set('usedWords', state.usedWords);
-  pick = pick18PlusWordForTier(tierPoints, excludeWords);
+  pick = pickWordForTier(categoryId, tierPoints, excludeWords);
   if (pick) {
     return { word: pick.word, modeName: pick.mode, modeObj: MODES_META[pick.mode] || MODES[0], points: pick.points };
   }
@@ -176,10 +184,10 @@ async function draw18PlusTier(tierPoints, excludeWords) {
   return { word: "???", modeName: "Mutasd meg!", modeObj: MODES_META['Mutasd meg!'], points: tierPoints };
 }
 
-async function draw18PlusThreeCards() {
-  const c1 = await draw18PlusTier(1, []);
-  const c3 = await draw18PlusTier(3, [c1.word]);
-  const c2 = await draw18PlusTier(2, [c1.word, c3.word]);
+async function drawPick3ThreeCards(categoryId) {
+  const c1 = await drawPick3Tier(categoryId, 1, []);
+  const c3 = await drawPick3Tier(categoryId, 3, [c1.word]);
+  const c2 = await drawPick3Tier(categoryId, 2, [c1.word, c3.word]);
   return [c1, c2, c3];
 }
 
@@ -202,6 +210,7 @@ const UI = {
     document.getElementById('pick3-val').textContent = state.pick3SelectSecs;
     document.getElementById('gm-status').textContent = '';
     document.getElementById('sound-toggle').checked = SoundEngine.isEnabled();
+    document.getElementById('hidewords-toggle').checked = state.hideWords;
     document.getElementById('volume-range').value = Math.round(SoundEngine.getVolume() * 100);
     document.getElementById('volume-val').textContent = Math.round(SoundEngine.getVolume() * 100) + '%';
     UI.updateSessionCounter();
@@ -230,6 +239,17 @@ const UI = {
     SoundEngine.setVolume(v / 100);
   },
   toggleSound() { const on = document.getElementById('sound-toggle').checked; SoundEngine.setEnabled(on); if (on) SoundEngine.play('btn-click'); },
+  toggleHideWords() {
+    state.hideWords = document.getElementById('hidewords-toggle').checked;
+    Store.set('hideWords', state.hideWords);
+    // Ha épp látszik egy feladvány, azonnal frissítsük a megjelenítést
+    if (document.getElementById('state-card')?.classList.contains('active')) {
+      document.getElementById('challenge-word').textContent = state.hideWords ? '🙈 Rejtett szó' : state.currentWord;
+    }
+    if (document.getElementById('state-pick3')?.classList.contains('active') && state.threeCards.length && state.selectedPick3Index === null) {
+      UI.renderPick3(state.threeCards);
+    }
+  },
   updateSessionCounter() {
     const t = Session.totalUsed();
     const el = document.getElementById('session-counter');
@@ -331,7 +351,7 @@ const UI = {
           <div class="pick3-stars">${'★'.repeat(c.points)}</div>
         </div>
         <div class="pick3-divider"></div>
-        <div class="pick3-word">${c.word}</div>
+        <div class="pick3-word">${state.hideWords ? '🙈 Rejtett szó' : c.word}</div>
         <div class="pick3-mode">
           <i class="ti ${(c.modeObj && c.modeObj.icon) || 'ti-star'}"></i>
           ${c.modeName}
@@ -416,8 +436,8 @@ const App = {
     const category = CATEGORIES.find(c => c.id === state.activeCategoryId);
     if (!category) return;
 
-    if (category.id === 'tizennyolcPlus') {
-      await App.draw18Plus();
+    if (category.pick3) {
+      await App.drawPick3(category.id);
       return;
     }
 
@@ -439,7 +459,7 @@ const App = {
     state.currentMode = result.modeName;
     state.currentPoints = null;
 
-    document.getElementById('challenge-word').textContent = result.word;
+    document.getElementById('challenge-word').textContent = state.hideWords ? '🙈 Rejtett szó' : result.word;
     document.getElementById('mode-label').textContent = result.modeName;
     document.getElementById('mode-icon').className = 'ti ' + (result.modeObj?.icon || 'ti-star');
     document.getElementById('challenge-desc').textContent = result.modeObj?.hint || '';
@@ -448,12 +468,12 @@ const App = {
     ScoreboardSync.readySelected(state.currentWord, state.currentMode, state.currentPoints);
   },
 
-  /* ===== 18+ HÁROM KÁRTYÁS HÚZÁS ===== */
-  async draw18Plus() {
+  /* ===== HÁROM KÁRTYÁS HÚZÁS (pick3 kategóriáknál) ===== */
+  async drawPick3(categoryId) {
     UI.setLoading(true);
     let cards;
     try {
-      cards = await draw18PlusThreeCards();
+      cards = await drawPick3ThreeCards(categoryId);
     } finally {
       UI.setLoading(false);
     }
@@ -510,7 +530,7 @@ const App = {
     state.currentWord = picked.word;
     state.currentMode = picked.modeName;
     state.currentPoints = picked.points;
-    Session.markUsed('tizennyolcPlus', picked.word);
+    Session.markUsed(state.activeCategoryId, picked.word);
 
     const grid = document.getElementById('pick3-grid');
     if (grid) grid.classList.add('locked');
@@ -588,7 +608,6 @@ const App = {
       console.log('[App] Távoli "Lejárt" jelzés érkezett, helyi időzítő leállítása.');
       if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
       if (window.AudioLibrary) AudioLibrary.stopAmbient();
-      SoundEngine.play('buzzer');
       if (window.AudioLibrary) AudioLibrary.playEvent(state.activeCategoryId, 'timeout');
       document.getElementById('btn-solved').style.display = 'none';
       document.getElementById('btn-done').style.display = '';
@@ -597,7 +616,7 @@ const App = {
   },
 
   startTimer() {
-    SoundEngine.play('timer-start');
+    // Az időzítő hangjai (indítás/tik-tak/duda) a kivetítőn szólnak, nem itt.
     const secs = state.timerSecs;
     state.timeLeft = secs;
 
@@ -633,10 +652,6 @@ const App = {
       // Scoreboard szinkron: minden másodperces tick
       ScoreboardSync.timerTick(state.timeLeft, secs);
 
-      if (state.timeLeft <= 3 && state.timeLeft > 0) SoundEngine.play('beep');
-      else if (state.timeLeft <= 10) SoundEngine.play('tick-fast');
-      else SoundEngine.play('tick');
-
       if (pct < 0.25) arc.style.stroke = '#e84040';
       else if (pct < 0.5) arc.style.stroke = '#fbbf24';
 
@@ -644,11 +659,10 @@ const App = {
         clearInterval(state.timerInterval);
         state.timerInterval = null;
         if (window.AudioLibrary) AudioLibrary.stopAmbient();
-        SoundEngine.play('buzzer');
         if (window.AudioLibrary) AudioLibrary.playEvent(state.activeCategoryId, 'timeout');
         document.getElementById('btn-solved').style.display = 'none';
         document.getElementById('btn-done').style.display = '';
-        // Scoreboard szinkron: lejárt az idő -> piros
+        // Scoreboard szinkron: lejárt az idő -> piros (a "duda" hang a kivetítőn szól)
         ScoreboardSync.timeout(state.currentWord, state.currentPoints);
         UI.showState('timeout');
       }

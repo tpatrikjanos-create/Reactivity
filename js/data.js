@@ -1,9 +1,10 @@
 const CATEGORIES = [
   {
-    id: "csaladi",
-    name: "Családi",
+    id: "altalanos",
+    name: "Általános",
     icon: "ti-users",
-    description: "Mindenki számára megfelelő, vidám feladványok",
+    pick3: true,
+    description: "Mindenki számára megfelelő, vidám feladványok - 3 kártyából választhatsz (1/2/3 pontos)",
     words: {
       "Mutasd meg!": ["kutya","macska","elefánt","repülő","bicikli","zsiráf","pingvin","focizás","alvás","úszás","gitározás","tánc","főzés","síelés","ugrálás","kacsa","ló","teknős","majom","papagáj","horgászás","kötélhúzás","tornázás","evezés","kapuőr"],
       "Rajzold le!": ["ház","fa","nap","hold","csillag","szív","hal","virág","autó","vonat","hegy","tenger","felhő","esernyő","könyv","torta","labda","bot","szék","lámpa","híd","kút","szélmalom","delfin","szivárvány"],

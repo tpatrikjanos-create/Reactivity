@@ -53,7 +53,7 @@
       </button>
       <div class="category-pill" id="active-cat-pill">
         <i class="ti ti-tag"></i>
-        <span id="active-cat-name">Családi</span>
+        <span id="active-cat-name">Általános</span>
       </div>
     </div>
 
@@ -220,6 +220,14 @@
     </div>
 
     <div class="gm-section">
+      <label class="section-label">Szavak elrejtése</label>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:14px;">Csak a pontszám látszódjon (1/2/3), a szó ne</span>
+        <input type="checkbox" id="hidewords-toggle" onchange="UI.toggleHideWords()" style="width:20px;height:20px;accent-color:#1ec8ff;flex-shrink:0;margin-left:10px;"/>
+      </div>
+    </div>
+
+    <div class="gm-section">
       <label class="section-label">Hangkönyvtár (kategóriánkénti zenék)</label>
       <p class="section-hint" style="margin-bottom:8px;">Válassz kategóriát és helyzetet, majd tölts fel hozzá MP3 fájl(oka)t. A lejátszás automatikus, véletlenszerű, és nem ismétel, amíg minden fel nem hangzott.</p>
 
@@ -275,12 +283,13 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-<script src="js/sounds.js?v=16"></script>
-<script src="js/data.js?v=16"></script>
-<script src="js/data-18plus.js?v=16"></script>
-<script src="js/audio-library.js?v=16"></script>
-<script src="js/firebase-sync.js?v=16"></script>
-<script src="js/app.js?v=16"></script>
-<div style="position:fixed;bottom:6px;right:9px;z-index:900;font-size:10px;color:rgba(255,255,255,.28);pointer-events:none;font-family:'Nunito',sans-serif">v1.5</div>
+<script src="js/sounds.js?v=17"></script>
+<script src="js/data.js?v=17"></script>
+<script src="js/data-18plus.js?v=17"></script>
+<script src="js/data-altalanos.js?v=17"></script>
+<script src="js/audio-library.js?v=17"></script>
+<script src="js/firebase-sync.js?v=17"></script>
+<script src="js/app.js?v=17"></script>
+<div style="position:fixed;bottom:6px;right:9px;z-index:900;font-size:10px;color:rgba(255,255,255,.28);pointer-events:none;font-family:'Nunito',sans-serif">v1.6</div>
 </body>
 </html>
