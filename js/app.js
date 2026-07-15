@@ -713,15 +713,9 @@ function init() {
     });
   });
   UI.showState('idle');
-
-  // Távoli indítás-figyelő regisztrálása. A callback regisztrálása nem
-  // időzítéshez kötött: a ScoreboardSync akkor csatlakoztatja ténylegesen
-  // a Firebase-figyelőt, amikor a kapcsolat elkészül - akár azonnal, akár
-  // lassú hálózat esetén csak jóval később -, nincs feladó timeout.
-  if (window.ScoreboardSync) {
-    ScoreboardSync.listenForStart((remoteGame) => App.onRemoteStartSignal(remoteGame));
-    ScoreboardSync.onGameChange((game) => App.onRemoteGameStatus(game));
-  }
+  // A távoli indítás/megoldás/lejárat figyelését a firebase-sync.js intézi
+  // közvetlenül (window.App.onRemoteStartSignal / onRemoteGameStatus hívásával),
+  // itt nincs szükség semmilyen regisztrációra.
 }
 
 document.addEventListener('DOMContentLoaded', init);
