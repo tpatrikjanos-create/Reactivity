@@ -66,6 +66,17 @@ const MODES_META = {
   'Szájról olvasás!':   { icon: 'ti-mouth',          hint: 'Hangtalanul mozgasd a szájad – semmi hang!' }
 };
 
+// A belső adatkulcsok (fenti MODES_META, adatfájlok) NEM változtak, csak a
+// képernyőn megjelenő elnevezés - így nem kellett a több száz szó-bejegyzést
+// átírni. 2026-07-15: átnevezve a felhasználó kérésére.
+const MODE_DISPLAY_NAMES = {
+  'Mutasd meg!':       'Mutogatás',
+  'Rajzold le!':       'Rajzolás',
+  'Magyarázd el!':     'Magyarázás',
+  'Írd körül!':        'Körülírás',
+  'Szájról olvasás!':  'Szájról olvasás'
+};
+
 /* ===== AI GENERÁLÁS ===== */
 async function generateWithAI(category) {
   const modeNames = Object.keys(category.words);
@@ -244,7 +255,7 @@ const UI = {
     Store.set('hideWords', state.hideWords);
     // Ha épp látszik egy feladvány, azonnal frissítsük a megjelenítést
     if (document.getElementById('state-card')?.classList.contains('active')) {
-      document.getElementById('challenge-word').textContent = state.hideWords ? '🙈 Rejtett szó' : state.currentWord;
+      document.getElementById('challenge-word').classList.toggle('word-hidden', state.hideWords);
     }
     if (document.getElementById('state-pick3')?.classList.contains('active') && state.threeCards.length && state.selectedPick3Index === null) {
       UI.renderPick3(state.threeCards);
@@ -347,14 +358,14 @@ const UI = {
     grid.innerHTML = cards.map((c, i) => `
       <button class="pick3-card" data-idx="${i}" onclick="App.selectPick3Card(${i})">
         <div>
-          <div class="pick3-points">${c.points}</div>
+          <div class="pick3-points">${c.points} pontos</div>
           <div class="pick3-stars">${'★'.repeat(c.points)}</div>
         </div>
         <div class="pick3-divider"></div>
-        <div class="pick3-word">${state.hideWords ? '🙈 Rejtett szó' : c.word}</div>
+        <div class="pick3-word${state.hideWords ? ' word-hidden' : ''}">${c.word}</div>
         <div class="pick3-mode">
           <i class="ti ${(c.modeObj && c.modeObj.icon) || 'ti-star'}"></i>
-          ${c.modeName}
+          ${MODE_DISPLAY_NAMES[c.modeName] || c.modeName}
         </div>
         <i class="ti ti-circle-check pick3-check"></i>
       </button>`).join('');
@@ -459,8 +470,10 @@ const App = {
     state.currentMode = result.modeName;
     state.currentPoints = null;
 
-    document.getElementById('challenge-word').textContent = state.hideWords ? '🙈 Rejtett szó' : result.word;
-    document.getElementById('mode-label').textContent = result.modeName;
+    const wordEl = document.getElementById('challenge-word');
+    wordEl.textContent = result.word;
+    wordEl.classList.toggle('word-hidden', state.hideWords);
+    document.getElementById('mode-label').textContent = MODE_DISPLAY_NAMES[result.modeName] || result.modeName;
     document.getElementById('mode-icon').className = 'ti ' + (result.modeObj?.icon || 'ti-star');
     document.getElementById('challenge-desc').textContent = result.modeObj?.hint || '';
 

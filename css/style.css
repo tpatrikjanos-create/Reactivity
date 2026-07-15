@@ -643,7 +643,8 @@ input:focus { border-color: var(--accent); }
 
 .pick3-points {
   font-family: 'Bebas Neue', sans-serif;
-  font-size: 56px;
+  font-size: 30px;
+  letter-spacing: 1px;
   line-height: 1;
   color: var(--text-muted);
   transition: color 0.15s;
@@ -671,6 +672,18 @@ input:focus { border-color: var(--accent); }
   color: var(--text);
   line-height: 1.15;
   word-break: break-word;
+}
+.pick3-word.word-hidden {
+  filter: blur(9px);
+  user-select: none;
+}
+.pick3-card.selected .pick3-word {
+  filter: blur(0) !important;
+}
+
+.challenge-word.word-hidden {
+  filter: blur(10px);
+  user-select: none;
 }
 
 .pick3-mode {
