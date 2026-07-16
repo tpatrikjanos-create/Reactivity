@@ -12,6 +12,10 @@ const state = {
   pick3SelectSecs: Store.get('pick3SelectSecs', 15),
   apiKey: Store.get('apiKey', ''),
   hideWords: Store.get('hideWords', false),
+  // 3 lapos válogatásnál pontonként eltérő rejtés: 1p mindkettő látszik,
+  // 2p csak a szó, 3p csak a feladat. Külön kapcsoló a sima "mindent rejt"
+  // hideWords-től - a kettő nem kombinálódik, pointBasedReveal felülír.
+  pointBasedReveal: Store.get('pointBasedReveal', false),
   currentWord: null,
   currentMode: null,
   currentPoints: null,
@@ -221,12 +225,11 @@ const UI = {
     document.getElementById('gm-status').textContent = '';
     document.getElementById('sound-toggle').checked = SoundEngine.isEnabled();
     document.getElementById('hidewords-toggle').checked = state.hideWords;
+    document.getElementById('pointreveal-toggle').checked = state.pointBasedReveal;
     document.getElementById('volume-range').value = Math.round(SoundEngine.getVolume() * 100);
     document.getElementById('volume-val').textContent = Math.round(SoundEngine.getVolume() * 100) + '%';
     UI.updateSessionCounter();
     UI.renderCategoryGrid();
-    UI.populateAudioCategorySelect();
-    UI.refreshAudioLibraryList();
     document.getElementById('gm-panel').classList.add('active');
   },
   renderCategoryGrid() {
@@ -260,6 +263,13 @@ const UI = {
       UI.renderPick3(state.threeCards);
     }
   },
+  togglePointReveal() {
+    state.pointBasedReveal = document.getElementById('pointreveal-toggle').checked;
+    Store.set('pointBasedReveal', state.pointBasedReveal);
+    if (document.getElementById('state-pick3')?.classList.contains('active') && state.threeCards.length && state.selectedPick3Index === null) {
+      UI.renderPick3(state.threeCards);
+    }
+  },
   updateSessionCounter() {
     const t = Session.totalUsed();
     const el = document.getElementById('session-counter');
@@ -279,52 +289,6 @@ const UI = {
     App.onRemoteStartSignal();
   },
 
-  /* ===== HANGKÖNYVTÁR GM UI ===== */
-  populateAudioCategorySelect() {
-    const sel = document.getElementById('audio-cat-select');
-    if (!sel) return;
-    sel.innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-  },
-
-  async refreshAudioLibraryList() {
-    const catId = document.getElementById('audio-cat-select').value;
-    const slot = document.getElementById('audio-slot-select').value;
-    const listEl = document.getElementById('audio-track-list');
-    if (!listEl) return;
-    try {
-      const tracks = await AudioLibrary.getTracks(catId, slot);
-      if (tracks.length === 0) {
-        listEl.innerHTML = '<div class="audio-track-empty">Még nincs hozzárendelt hangfájl ehhez a helyzethez.</div>';
-        return;
-      }
-      listEl.innerHTML = tracks.map(t => `
-        <div class="audio-track-item">
-          <i class="ti ti-music"></i>
-          <span class="track-name">${t.name}</span>
-          <button class="track-del" onclick="UI.deleteAudioTrack(${t.id})"><i class="ti ti-trash"></i></button>
-        </div>`).join('');
-    } catch(e) {
-      listEl.innerHTML = '<div class="audio-track-empty">Hiba a betöltéskor.</div>';
-    }
-  },
-
-  async uploadAudioFiles() {
-    const input = document.getElementById('audio-file-input');
-    const catId = document.getElementById('audio-cat-select').value;
-    const slot = document.getElementById('audio-slot-select').value;
-    if (!input.files || input.files.length === 0) return;
-    for (const file of input.files) {
-      try { await AudioLibrary.addTrack(catId, slot, file); } catch(e) {}
-    }
-    input.value = '';
-    UI.refreshAudioLibraryList();
-    document.getElementById('gm-status').textContent = '✓ Hangfájl(ok) feltöltve!';
-  },
-
-  async deleteAudioTrack(id) {
-    try { await AudioLibrary.removeTrack(id); } catch(e) {}
-    UI.refreshAudioLibraryList();
-  },
   saveGMSettings() {
     SoundEngine.play('btn-click');
     const sel = document.querySelector('.cat-btn.selected');
@@ -354,20 +318,31 @@ const UI = {
   renderPick3(cards) {
     const grid = document.getElementById('pick3-grid');
     grid.classList.remove('locked');
-    grid.innerHTML = cards.map((c, i) => `
+    grid.innerHTML = cards.map((c, i) => {
+      // Pontonkénti rejtés (ha be van kapcsolva): 1p = mindkettő látszik,
+      // 2p = csak a szó, a feladat rejtve, 3p = csak a feladat, a szó rejtve.
+      // A sima "mindent rejt" kapcsoló csak akkor számít, ha ez ki van kapcsolva.
+      let wordHidden = state.hideWords;
+      let modeHidden = false;
+      if (state.pointBasedReveal) {
+        wordHidden = c.points === 3;
+        modeHidden = c.points === 2;
+      }
+      return `
       <button class="pick3-card" data-idx="${i}" onclick="App.selectPick3Card(${i})">
         <div>
           <div class="pick3-points">${c.points} pontos</div>
           <div class="pick3-stars">${'★'.repeat(c.points)}</div>
         </div>
         <div class="pick3-divider"></div>
-        <div class="pick3-word${state.hideWords ? ' word-hidden' : ''}">${c.word}</div>
-        <div class="pick3-mode">
+        <div class="pick3-word${wordHidden ? ' word-hidden' : ''}">${c.word}</div>
+        <div class="pick3-mode${modeHidden ? ' mode-hidden' : ''}">
           <i class="ti ${(c.modeObj && c.modeObj.icon) || 'ti-star'}"></i>
           ${MODE_DISPLAY_NAMES[c.modeName] || c.modeName}
         </div>
         <i class="ti ti-circle-check pick3-check"></i>
-      </button>`).join('');
+      </button>`;
+    }).join('');
     const waitEl = document.getElementById('pick3-waiting');
     if (waitEl) waitEl.style.display = 'none';
   },
@@ -558,7 +533,8 @@ const App = {
     const numEl = document.getElementById('countdown-num');
     UI.showState('countdown');
     numEl.textContent = n;
-    SoundEngine.play('beep');
+    // A "beep" hang mostantól a kivetítőn szól (CountdownFX.show), hogy egy
+    // helyen legyen az összes hangeffekt.
 
     const interval = setInterval(() => {
       n--;
@@ -567,7 +543,6 @@ const App = {
         numEl.style.animation = 'none';
         void numEl.offsetWidth;
         numEl.style.animation = '';
-        SoundEngine.play('beep');
       } else {
         clearInterval(interval);
         App.startTimer();
@@ -636,7 +611,7 @@ const App = {
     if (window.AudioLibrary) AudioLibrary.playLoopingPool(state.activeCategoryId, state.currentMode);
 
     // Scoreboard szinkron: időzítő indul, szó/mód/pont átadása
-    ScoreboardSync.timerStart(state.currentWord, state.currentMode, state.currentPoints, secs);
+    ScoreboardSync.timerStart(state.currentWord, state.currentMode, state.currentPoints, secs, state.activeCategoryId);
     // Új kör -> előző kör rablás-jelentkezései érvénytelenek, töröljük őket
     if (window.ScoreboardSync && ScoreboardSync.robberyReset) ScoreboardSync.robberyReset();
 
@@ -677,7 +652,7 @@ const App = {
         document.getElementById('btn-solved').style.display = 'none';
         document.getElementById('btn-done').style.display = '';
         // Scoreboard szinkron: lejárt az idő -> piros (a "duda" hang a kivetítőn szól)
-        ScoreboardSync.timeout(state.currentWord, state.currentPoints);
+        ScoreboardSync.timeout(state.currentWord, state.currentPoints, state.activeCategoryId);
         UI.showState('timeout');
       }
     }, 1000);
@@ -693,7 +668,7 @@ const App = {
     if (window.AudioLibrary) AudioLibrary.playEvent(state.activeCategoryId, 'solved');
 
     // Scoreboard szinkron: megoldva -> zöld
-    ScoreboardSync.solved(state.currentWord, state.currentPoints);
+    ScoreboardSync.solved(state.currentWord, state.currentPoints, state.activeCategoryId);
 
     document.getElementById('solved-word-recap').textContent = state.currentWord || '';
     UI.showState('solved');
@@ -714,7 +689,7 @@ const App = {
     if (grid) grid.classList.remove('locked');
     const waitEl = document.getElementById('pick3-waiting');
     if (waitEl) waitEl.style.display = 'none';
-    ScoreboardSync.idle();
+    ScoreboardSync.idle(state.activeCategoryId);
     UI.showState('idle');
     if (window.AudioLibrary) AudioLibrary.playLoopingPool(state.activeCategoryId, 'idle');
   }

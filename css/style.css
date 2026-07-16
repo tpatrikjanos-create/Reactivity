@@ -674,16 +674,32 @@ input:focus { border-color: var(--accent); }
   word-break: break-word;
 }
 .pick3-word.word-hidden {
-  filter: blur(9px);
+  filter: blur(15px) saturate(1.5);
   user-select: none;
+  animation: mystery-pulse 2.6s ease-in-out infinite;
 }
-.pick3-card.selected .pick3-word {
+.pick3-mode.mode-hidden {
+  filter: blur(8px) saturate(1.5);
+  user-select: none;
+  animation: mystery-pulse 2.6s ease-in-out infinite;
+}
+.pick3-card.selected .pick3-word,
+.pick3-card.selected .pick3-mode {
   filter: blur(0) !important;
+  animation: none !important;
+}
+@keyframes mystery-pulse {
+  0%, 100% { opacity: .78; }
+  50% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pick3-word.word-hidden, .pick3-mode.mode-hidden { animation: none; }
 }
 
 .challenge-word.word-hidden {
-  filter: blur(10px);
+  filter: blur(16px) saturate(1.5);
   user-select: none;
+  animation: mystery-pulse 2.6s ease-in-out infinite;
 }
 
 .pick3-mode {

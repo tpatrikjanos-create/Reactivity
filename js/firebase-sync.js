@@ -63,34 +63,37 @@ const ScoreboardSync = (() => {
 
   // ===== Publikus API-k, amiket az app.js hív (kimenő adat) =====
 
-  function idle() {
-    push({ status: "idle" });
+  function idle(categoryId) {
+    push({ status: "idle", categoryId: categoryId || "" });
   }
 
-  function timerStart(word, mode, points, totalTime) {
+  function timerStart(word, mode, points, totalTime, categoryId) {
     push({
       status: "running",
       word: word || "",
       mode: mode || "",
       points: (points === null || points === undefined) ? null : points,
       timeLeft: totalTime,
-      totalTime: totalTime
+      totalTime: totalTime,
+      categoryId: categoryId || ""
     });
   }
 
-  function solved(word, points) {
+  function solved(word, points, categoryId) {
     push({
       status: "solved",
       word: word || "",
-      points: (points === null || points === undefined) ? null : points
+      points: (points === null || points === undefined) ? null : points,
+      categoryId: categoryId || ""
     });
   }
 
-  function timeout(word, points) {
+  function timeout(word, points, categoryId) {
     push({
       status: "timeout",
       word: word || "",
-      points: (points === null || points === undefined) ? null : points
+      points: (points === null || points === undefined) ? null : points,
+      categoryId: categoryId || ""
     });
   }
 

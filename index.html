@@ -225,33 +225,15 @@
         <span style="font-size:14px;">Csak a pontszám látszódjon (1/2/3), a szó ne</span>
         <input type="checkbox" id="hidewords-toggle" onchange="UI.toggleHideWords()" style="width:20px;height:20px;accent-color:#1ec8ff;flex-shrink:0;margin-left:10px;"/>
       </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;">
+        <span style="font-size:14px;">Pontonkénti rejtés a 3 lapos válogatásnál: 1p = szó+feladat látszik, 2p = csak szó, 3p = csak feladat</span>
+        <input type="checkbox" id="pointreveal-toggle" onchange="UI.togglePointReveal()" style="width:20px;height:20px;accent-color:#1ec8ff;flex-shrink:0;margin-left:10px;"/>
+      </div>
     </div>
 
     <div class="gm-section">
-      <label class="section-label">Hangkönyvtár (kategóriánkénti zenék)</label>
-      <p class="section-hint" style="margin-bottom:8px;">Válassz kategóriát és helyzetet, majd tölts fel hozzá MP3 fájl(oka)t. A lejátszás automatikus, véletlenszerű, és nem ismétel, amíg minden fel nem hangzott.</p>
-
-      <div class="timer-row" style="margin-bottom:8px;">
-        <select id="audio-cat-select" class="audio-select" onchange="UI.refreshAudioLibraryList()"></select>
-      </div>
-      <div class="timer-row" style="margin-bottom:10px;">
-        <select id="audio-slot-select" class="audio-select" onchange="UI.refreshAudioLibraryList()">
-          <option value="idle">🌙 Üresjárat (nincs feladat kihúzva)</option>
-          <option value="solved">✓ Sikeres megoldás</option>
-          <option value="timeout">⏰ Lejárt idő</option>
-          <option value="Mutasd meg!">🙋 Mutogatás</option>
-          <option value="Rajzold le!">✏️ Rajzolás</option>
-          <option value="Írd körül!">📝 Körülírás</option>
-          <option value="Szájról olvasás!">👄 Szájról olvasás</option>
-        </select>
-      </div>
-
-      <label class="btn-modal" for="audio-file-input" style="cursor:pointer;display:flex;">
-        <i class="ti ti-upload"></i> MP3 feltöltése
-      </label>
-      <input type="file" id="audio-file-input" accept="audio/*" multiple style="display:none;" onchange="UI.uploadAudioFiles()"/>
-
-      <div id="audio-track-list" style="margin-top:10px;display:flex;flex-direction:column;gap:6px;"></div>
+      <label class="section-label">Hangkönyvtár</label>
+      <p class="section-hint">A kategóriánkénti szituációs zenék feltöltése átkerült a kivetítő appba (ott kell feltölteni a 🎵 gombbal, mert a lejátszás is ott történik).</p>
     </div>
 
     <div class="gm-section">
@@ -282,13 +264,12 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-<script src="js/sounds.js?v=22"></script>
-<script src="js/data.js?v=22"></script>
-<script src="js/data-18plus.js?v=22"></script>
-<script src="js/data-altalanos.js?v=22"></script>
-<script src="js/audio-library.js?v=22"></script>
-<script src="js/firebase-sync.js?v=22"></script>
-<script src="js/app.js?v=22"></script>
-<div style="position:fixed;bottom:6px;right:9px;z-index:900;font-size:10px;color:rgba(255,255,255,.28);pointer-events:none;font-family:'Nunito',sans-serif">v2.1</div>
+<script src="js/sounds.js?v=23"></script>
+<script src="js/data.js?v=23"></script>
+<script src="js/data-18plus.js?v=23"></script>
+<script src="js/data-altalanos.js?v=23"></script>
+<script src="js/firebase-sync.js?v=23"></script>
+<script src="js/app.js?v=23"></script>
+<div style="position:fixed;bottom:6px;right:9px;z-index:900;font-size:10px;color:rgba(255,255,255,.28);pointer-events:none;font-family:'Nunito',sans-serif">v2.2</div>
 </body>
 </html>
