@@ -662,9 +662,9 @@ const App = {
       state.timeLeft--;
       document.getElementById('timer-num').textContent = state.timeLeft;
       const pct = state.timeLeft / secs;
-
-      // Scoreboard szinkron: minden másodperces tick
-      ScoreboardSync.timerTick(state.timeLeft, secs);
+      // A kivetítő saját, helyi visszaszámlálót futtat (lásd kivetito_1.html) -
+      // nincs többé másodpercenkénti Firebase-szinkron, kevesebb hálózati
+      // forgalom, és a kivetítő oldali kijelzés se függ a hálózat ütemétől.
 
       if (pct < 0.25) arc.style.stroke = '#e84040';
       else if (pct < 0.5) arc.style.stroke = '#fbbf24';

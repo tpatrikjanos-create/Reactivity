@@ -78,13 +78,6 @@ const ScoreboardSync = (() => {
     });
   }
 
-  function timerTick(timeLeft, totalTime) {
-    if (!ready) return;
-    try {
-      db.ref(PATH).update({ timeLeft, totalTime, updatedAt: Date.now() });
-    } catch (e) {}
-  }
-
   function solved(word, points) {
     push({
       status: "solved",
@@ -194,7 +187,7 @@ const ScoreboardSync = (() => {
   }
 
   return {
-    init, idle, timerStart, timerTick, solved, timeout, readySelected,
+    init, idle, timerStart, solved, timeout, readySelected,
     signalStart, robberyReset, isReady: () => ready
   };
 })();
