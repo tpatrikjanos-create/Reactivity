@@ -637,6 +637,8 @@ const App = {
 
     // Scoreboard szinkron: időzítő indul, szó/mód/pont átadása
     ScoreboardSync.timerStart(state.currentWord, state.currentMode, state.currentPoints, secs);
+    // Új kör -> előző kör rablás-jelentkezései érvénytelenek, töröljük őket
+    if (window.ScoreboardSync && ScoreboardSync.robberyReset) ScoreboardSync.robberyReset();
 
     const arc = document.getElementById('timer-arc');
     arc.style.strokeDasharray = CIRC;

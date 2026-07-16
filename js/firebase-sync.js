@@ -120,6 +120,14 @@ const ScoreboardSync = (() => {
     try { db.ref(PATH).update({ startSignal: Date.now() }); } catch (e) {}
   }
 
+  // Minden új kör indulásakor törli az előző kör rablás-jelentkezéseit, hogy
+  // ne "örököljön" jelentkezőket az új feladvány. A kivetítő és a GM App
+  // ebből a node-ból olvassa a rablás állapotát (queue + currentIndex + phase).
+  function robberyReset() {
+    if (!ready || !db) return;
+    try { db.ref('activityRobbery').set({ queue: null, currentIndex: -1, phase: 'collecting' }); } catch (e) {}
+  }
+
   // ===== BEJÖVŐ ADAT: a GM App (vagy másik eszköz) által írt változások =====
   // Ugyanaz a minta, mint a kivetítőben: egyetlen közvetlen figyelő a teljes
   // activityGame node-on, ami a state.status VÁLTOZÁSÁRA reagál (nem minden
@@ -187,7 +195,7 @@ const ScoreboardSync = (() => {
 
   return {
     init, idle, timerStart, timerTick, solved, timeout, readySelected,
-    signalStart, isReady: () => ready
+    signalStart, robberyReset, isReady: () => ready
   };
 })();
 
