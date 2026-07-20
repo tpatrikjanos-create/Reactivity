@@ -873,3 +873,21 @@ input:focus { border-color: var(--accent); }
 
 .pick3-grid.locked .pick3-card { pointer-events: none; }
 .pick3-grid.locked .pick3-card:not(.selected) { opacity: 0.4; }
+
+/* ===== Intro overlay ("Új játék" indításakor) ===== */
+#intro-overlay {
+  position: fixed; inset: 0; z-index: 3100; background: var(--bg);
+  display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px;
+  pointer-events: none;
+}
+#intro-overlay.show { display: flex; animation: intro-fade-out 2.5s ease forwards; }
+.intro-logo { animation: intro-pop .6s cubic-bezier(.34,1.56,.64,1); }
+.intro-title {
+  font-family: 'Bebas Neue', sans-serif; font-size: 44px; letter-spacing: .2em;
+  color: var(--accent); text-shadow: 0 0 30px rgba(30,200,255,.5);
+  opacity: 0; animation: intro-title-in .5s ease .3s forwards;
+}
+@keyframes intro-pop { 0% { transform: scale(.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+@keyframes intro-title-in { to { opacity: 1; } }
+@keyframes intro-fade-out { 0%, 72% { opacity: 1; } 100% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { #intro-overlay.show { animation: none; } }

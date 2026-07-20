@@ -34,6 +34,12 @@
   <div style="position:relative;font-size:13px;color:#3d5a6b;pointer-events:none;">Koppints bárhová a teljes képernyős módhoz</div>
 </div>
 
+<!-- Intro overlay - "Új játék" indításakor fut le a GM App jelzésére -->
+<div id="intro-overlay">
+  <div class="intro-logo"><img src="icons/icon-512.png" alt="" style="width:80px;height:80px;border-radius:18px;"/></div>
+  <div class="intro-title">REACTIVITY</div>
+</div>
+
 <!-- ===== JÁTÉKOS NÉZET ===== -->
 <div id="player-view" class="view active">
   <div class="ambient-bg"><span></span><span></span></div>
@@ -237,6 +243,17 @@
     </div>
 
     <div class="gm-section">
+      <label class="section-label">Intro hang</label>
+      <p class="section-hint" style="margin-bottom:8px;">Ez a hang szól, amikor a GM App-ban "Új játék"-ot indítasz - minden appon (konzol, kivetítő, GM app, rabló app) saját bevezető animáció + ez a hang fut le.</p>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span id="intro-name" style="font-size:13px;color:#8888aa;flex:1;">Nincs intro-hang beállítva</span>
+        <label class="btn-modal" for="intro-file-input" style="cursor:pointer;padding:8px 12px;font-size:12px;"><i class="ti ti-upload"></i></label>
+        <button class="btn-modal" style="padding:8px 12px;font-size:12px;background:rgba(232,64,64,0.15);color:#e84040;" onclick="UI.deleteIntroSound()"><i class="ti ti-trash"></i></button>
+      </div>
+      <input type="file" id="intro-file-input" accept="audio/*" style="display:none" onchange="UI.uploadIntroSound()">
+    </div>
+
+    <div class="gm-section">
       <label class="section-label">Session állapot</label>
       <div id="session-counter" style="font-size:13px;color:#8888aa;margin-bottom:8px;">—</div>
       <button class="btn-modal" style="background:rgba(232,64,64,0.15);color:#e84040;border:1px solid rgba(232,64,64,0.3);" onclick="UI.resetSession()">
@@ -264,12 +281,12 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-<script src="js/sounds.js?v=23"></script>
-<script src="js/data.js?v=23"></script>
-<script src="js/data-18plus.js?v=23"></script>
-<script src="js/data-altalanos.js?v=23"></script>
-<script src="js/firebase-sync.js?v=23"></script>
-<script src="js/app.js?v=23"></script>
-<div style="position:fixed;bottom:6px;right:9px;z-index:900;font-size:10px;color:rgba(255,255,255,.28);pointer-events:none;font-family:'Nunito',sans-serif">v2.2</div>
+<script src="js/sounds.js?v=24"></script>
+<script src="js/data.js?v=24"></script>
+<script src="js/data-18plus.js?v=24"></script>
+<script src="js/data-altalanos.js?v=24"></script>
+<script src="js/firebase-sync.js?v=24"></script>
+<script src="js/app.js?v=24"></script>
+<div style="position:fixed;bottom:6px;right:9px;z-index:900;font-size:10px;color:rgba(255,255,255,.28);pointer-events:none;font-family:'Nunito',sans-serif">v2.3</div>
 </body>
 </html>

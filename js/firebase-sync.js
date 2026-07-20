@@ -132,6 +132,7 @@ const ScoreboardSync = (() => {
   // nincs közbenső "regisztráld a callbacket" réteg, ami elcsúszhatna időzítésben.
   let lastStatus = null;
   let lastStartSignal = null;
+  let lastNewGameSignal = null;
 
   function attachListeners(startAttachedAt) {
     db.ref(PATH).on("value", (snapshot) => {
@@ -164,6 +165,19 @@ const ScoreboardSync = (() => {
       }
     }, (err) => {
       console.warn("[ScoreboardSync] startSignal figyelő hiba (jogosultság?):", err);
+    });
+
+    // Új játék jelzés a GM App-ból - minden app saját maga resetel + intrót játszik le
+    db.ref("activityControl/newGameSignal").on("value", (snapshot) => {
+      const v = snapshot.val();
+      if (v === null || v === undefined) return;
+      if (v === lastNewGameSignal) return;
+      const isStale = lastNewGameSignal === null && typeof v === "number" && v < startAttachedAt;
+      lastNewGameSignal = v;
+      if (isStale) return;
+      if (typeof App !== "undefined" && typeof App.onRemoteNewGame === "function") App.onRemoteNewGame();
+    }, (err) => {
+      console.warn("[ScoreboardSync] newGameSignal figyelő hiba (jogosultság?):", err);
     });
   }
 

@@ -41,6 +41,32 @@ const Session = {
   totalUsed() { return Object.values(state.usedWords).reduce((s, a) => s + a.length, 0); }
 };
 
+/* ===== INTRO HANG (IndexedDB, appnkénti külön adatbázis) ===== */
+const IntroKit = (() => {
+  const DB = 'reactivity_intro_console', STORE = 'intro';
+  let db = null;
+  function openDB() {
+    return new Promise((res, rej) => {
+      if (db) return res(db);
+      const r = indexedDB.open(DB, 1);
+      r.onupgradeneeded = e => { e.target.result.createObjectStore(STORE); };
+      r.onsuccess = e => { db = e.target.result; res(db); };
+      r.onerror = rej;
+    });
+  }
+  async function save(file) { const d = await openDB(); return new Promise((res, rej) => { const tx = d.transaction(STORE, 'readwrite'); tx.objectStore(STORE).put(file, 'track'); tx.oncomplete = res; tx.onerror = rej; }); }
+  async function load() { const d = await openDB(); return new Promise((res, rej) => { const tx = d.transaction(STORE, 'readonly'); const req = tx.objectStore(STORE).get('track'); req.onsuccess = () => res(req.result || null); req.onerror = rej; }); }
+  async function clear() { const d = await openDB(); return new Promise((res, rej) => { const tx = d.transaction(STORE, 'readwrite'); tx.objectStore(STORE).delete('track'); tx.oncomplete = res; tx.onerror = rej; }); }
+  function play(onDone) {
+    const overlay = document.getElementById('intro-overlay');
+    if (!overlay) { if (onDone) onDone(); return; }
+    overlay.classList.add('show');
+    load().then(blob => { if (blob) { try { new Audio(URL.createObjectURL(blob)).play().catch(() => {}); } catch (e) {} } });
+    setTimeout(() => { overlay.classList.remove('show'); if (onDone) onDone(); }, 2500);
+  }
+  return { save, load, clear, play };
+})();
+
 /* ===== AI PROMPTS ===== */
 const CAT_PROMPTS = {
   tizennyolcPlus: (modeName, used) => {
@@ -230,6 +256,7 @@ const UI = {
     document.getElementById('volume-val').textContent = Math.round(SoundEngine.getVolume() * 100) + '%';
     UI.updateSessionCounter();
     UI.renderCategoryGrid();
+    UI.refreshIntroName();
     document.getElementById('gm-panel').classList.add('active');
   },
   renderCategoryGrid() {
@@ -276,6 +303,24 @@ const UI = {
     if (el) el.textContent = t > 0 ? `${t} szó elhangzott` : 'Még nincs elhangzott szó';
   },
   resetSession() { Session.reset(); UI.updateSessionCounter(); document.getElementById('gm-status').textContent = '✓ Session visszaállítva!'; },
+
+  async refreshIntroName() {
+    const blob = await IntroKit.load();
+    const el = document.getElementById('intro-name');
+    if (el) el.textContent = blob ? '🎵 Intro hang beállítva' : 'Nincs intro-hang beállítva';
+  },
+  async uploadIntroSound() {
+    const input = document.getElementById('intro-file-input');
+    if (!input.files || !input.files[0]) return;
+    await IntroKit.save(input.files[0]);
+    input.value = '';
+    UI.refreshIntroName();
+    document.getElementById('gm-status').textContent = '✓ Intro hang mentve!';
+  },
+  async deleteIntroSound() {
+    await IntroKit.clear();
+    UI.refreshIntroName();
+  },
 
   manualStartTimer() {
     if (!state.currentWord) {
@@ -555,6 +600,14 @@ const App = {
   // remoteGame: a Firebase activityGame node aktuális tartalma (lehet null) -
   // ha a konzolnak helyileg nincs kiválasztott szava (pl. újratöltés után),
   // ebből pótoljuk, hogy a konzol és a GM app mindig ugyanazt lássa.
+  // A GM App "Új játék" gombjának hatására fut le minden appon - a
+  // "Folytatás" gomb NEM küld jelet, tehát ide csak valódi új játéknál
+  // jutunk el (lásd firebase-sync.js baseline-guard mintáját).
+  onRemoteNewGame() {
+    Session.reset();
+    UI.updateSessionCounter();
+    IntroKit.play();
+  },
   onRemoteStartSignal(remoteGame) {
     console.log('[App] onRemoteStartSignal, helyi szó:', state.currentWord, '| távoli állapot:', remoteGame);
     if (!state.currentWord && remoteGame && remoteGame.word) {
