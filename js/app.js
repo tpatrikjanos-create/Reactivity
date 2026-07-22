@@ -644,14 +644,14 @@ const App = {
       document.getElementById('solved-word-recap').textContent = game.word || state.currentWord || '';
       UI.showState('solved');
       UI.launchConfetti();
+      setTimeout(() => App.reset(), 1800);   // nincs "Új feladvány" gomb - magától ugrik tovább
     } else if (status === 'timeout') {
       console.log('[App] Távoli "Lejárt" jelzés érkezett, helyi időzítő leállítása.');
       if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
       if (window.AudioLibrary) AudioLibrary.stopAmbient();
       if (window.AudioLibrary) AudioLibrary.playEvent(state.activeCategoryId, 'timeout');
-      document.getElementById('btn-solved').style.display = 'none';
-      document.getElementById('btn-done').style.display = '';
       UI.showState('timeout');
+      setTimeout(() => App.reset(), 1800);   // nincs "Új feladvány" gomb - magától ugrik tovább
     }
   },
 
@@ -707,6 +707,7 @@ const App = {
         // Scoreboard szinkron: lejárt az idő -> piros (a "duda" hang a kivetítőn szól)
         ScoreboardSync.timeout(state.currentWord, state.currentPoints, state.activeCategoryId);
         UI.showState('timeout');
+        setTimeout(() => App.reset(), 1800);   // nincs "Új feladvány" gomb - magától ugrik tovább
       }
     }, 1000);
   },
@@ -726,6 +727,7 @@ const App = {
     document.getElementById('solved-word-recap').textContent = state.currentWord || '';
     UI.showState('solved');
     UI.launchConfetti();
+    setTimeout(() => App.reset(), 1800);   // nincs "Új feladvány" gomb - magától ugrik tovább
   },
 
   reset() {
